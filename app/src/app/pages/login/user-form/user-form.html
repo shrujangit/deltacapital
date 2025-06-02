@@ -1,0 +1,48 @@
+<form [formGroup]="userForm" (ngSubmit)="onSubmit()" cdkDropList (cdkDropListDropped)="drop($event)">
+  <div *ngFor="let field of formConfig; let i = index" cdkDrag>
+    <div [ngSwitch]="field.type" class="field-block">
+
+      <mat-form-field *ngSwitchCase="'text'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <textarea *ngIf="field.multiline" matInput [formControlName]="field.name"></textarea>
+        <input *ngIf="!field.multiline" matInput [formControlName]="field.name" />
+      </mat-form-field>
+
+      <mat-form-field *ngSwitchCase="'select'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <mat-select [formControlName]="field.name">
+          <mat-option *ngFor="let opt of field.options" [value]="opt">{{ opt }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div *ngSwitchCase="'radio'" class="radio-group">
+        <label>{{ field.label }}</label>
+        <mat-radio-group [formControlName]="field.name">
+          <mat-radio-button *ngFor="let opt of field.options" [value]="opt">{{ opt }}</mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <div *ngSwitchCase="'checkbox'" class="checkbox-group">
+        <label>{{ field.label }}</label>
+        <div *ngFor="let opt of field.options; let j = index">
+          <mat-checkbox [formControl]="getCheckboxControl(field.name, j)">{{ opt }}</mat-checkbox>
+        </div>
+        <div *ngIf="isCheckboxGroupInvalid(field.name)" class="error">Please select at least one</div>
+      </div>
+
+      <mat-form-field *ngSwitchCase="'date'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <input matInput [matDatepicker]="picker" [formControlName]="field.name">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+    </div>
+  </div>
+
+  <div class="button-row">
+    <button mat-raised-button color="primary" type="submit" [disabled]="userForm.invalid">Submit</button>
+    <button mat-stroked-button type="button" (click)="onReset()">Reset</button>
+  </div>
+</form>
+<app-form-data *ngIf="submittedData" [submittedData]="submittedData" [formConfig]="formConfig"></app-form-data>
