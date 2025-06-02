@@ -1,87 +1,79 @@
-<form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <div cdkDropList (cdkDropListDropped)="drop($event)">
-    <div *ngFor="let field of formConfig" cdkDrag class="field-wrapper">
-      
-      <label>{{ field.label }}</label>
+<form [formGroup]="form" (ngSubmit)="onSubmit()" cdkDropList (cdkDropListDropped)="drop($event)">
+  <div *ngFor="let field of formConfig; let i = index" cdkDrag>
+    <div [ngSwitch]="field.type" class="field-block">
 
-      <!-- Single-line text -->
-      <mat-form-field *ngIf="field.type === 'text' && !field.multiline" appearance="outline">
-        <input matInput [formControlName]="field.name" />
-        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
-          Required
-        </mat-error>
-      </mat-form-field>
-
-      <!-- Multi-line text -->
-      <mat-form-field *ngIf="field.type === 'text' && field.multiline" appearance="outline">
-        <textarea matInput [formControlName]="field.name"></textarea>
-        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
-          Required
-        </mat-error>
+      <!-- Text Input -->
+      <mat-form-field *ngSwitchCase="'text'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <textarea *ngIf="field.multiline" matInput [formControlName]="field.name"></textarea>
+        <input *ngIf="!field.multiline" matInput [formControlName]="field.name" />
       </mat-form-field>
 
       <!-- Dropdown -->
-      <mat-form-field *ngIf="field.type === 'select'" appearance="outline">
+      <mat-form-field *ngSwitchCase="'select'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
         <mat-select [formControlName]="field.name">
           <mat-option *ngFor="let opt of field.options" [value]="opt">{{ opt }}</mat-option>
         </mat-select>
-        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
-          Required
-        </mat-error>
       </mat-form-field>
 
-      <!-- Checkbox group -->
-      <div *ngIf="field.type === 'checkbox'">
-        <mat-checkbox *ngFor="let opt of field.options; let j = index"
-                      [formControl]="getCheckboxControl(field.name, j)">
-          {{ opt }}
-        </mat-checkbox>
-        <div *ngIf="isCheckboxGroupInvalid(field.name)" class="error-text">
-          Please select at least one option
+      <!-- Radio Group -->
+      <div *ngSwitchCase="'radio'" class="radio-group">
+        <label>{{ field.label }}</label>
+        <mat-radio-group [formControlName]="field.name">
+          <mat-radio-button *ngFor="let opt of field.options" [value]="opt">{{ opt }}</mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <!-- Checkbox Group -->
+      <div *ngSwitchCase="'checkbox'" class="checkbox-group">
+        <label>{{ field.label }}</label>
+        <div *ngFor="let opt of field.options; let j = index">
+          <mat-checkbox [formControl]="getCheckboxControl(field.name, j)">
+            {{ opt }}
+          </mat-checkbox>
         </div>
+        <div *ngIf="isCheckboxGroupInvalid(field.name)" class="error">Please select at least one</div>
       </div>
 
-      <!-- Radio buttons -->
-      <mat-radio-group *ngIf="field.type === 'radio'" [formControlName]="field.name">
-        <mat-radio-button *ngFor="let opt of field.options" [value]="opt">
-          {{ opt }}
-        </mat-radio-button>
-      </mat-radio-group>
-      <div *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched" class="error-text">
-        Please select one
-      </div>
-
-      <!-- Date picker -->
-      <mat-form-field *ngIf="field.type === 'date'" appearance="outline">
-        <input matInput [matDatepicker]="picker" [formControlName]="field.name" />
+      <!-- Date Picker -->
+      <mat-form-field *ngSwitchCase="'date'" appearance="outline" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <input matInput [matDatepicker]="picker" [formControlName]="field.name">
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
-        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
-          Required
-        </mat-error>
       </mat-form-field>
 
-      <br /><br />
+      <!-- Remove Button -->
+      <button mat-icon-button color="warn" type="button" (click)="removeField(field.name)" aria-label="Remove field">
+        <mat-icon>delete</mat-icon>
+      </button>
+
     </div>
   </div>
-  <button mat-button type="button" (click)="onReset()">Reset</button>
-  <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">Submit</button>
+
+  <!-- Form Buttons -->
+  <div class="button-row">
+    <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">Submit</button>
+    <button mat-stroked-button type="button" (click)="onReset()">Reset</button>
+    <button mat-stroked-button color="accent" type="button" (click)="addField()">Add Field</button>
+  </div>
 </form>
 
+<!-- Submitted Data Table -->
 <div *ngIf="submittedData" class="submitted-table">
   <h3>Submitted Data</h3>
-
   <table mat-table [dataSource]="formConfig" class="mat-elevation-z2 full-width">
 
-    <!-- Field Label Column -->
+    <!-- Label Column -->
     <ng-container matColumnDef="label">
       <th mat-header-cell *matHeaderCellDef> Field </th>
       <td mat-cell *matCellDef="let field"> {{ field.label }} </td>
     </ng-container>
 
-    <!-- Submitted Value Column -->
+    <!-- Value Column -->
     <ng-container matColumnDef="value">
-      <th mat-header-cell *matHeaderCellDef> Submitted Value </th>
+      <th mat-header-cell *matHeaderCellDef> Value </th>
       <td mat-cell *matCellDef="let field">
         <ng-container *ngIf="field.name !== 'checkboxes'; else checkboxBlock">
           {{ submittedData[field.name] }}
@@ -96,5 +88,3 @@
     <tr mat-row *matRowDef="let row; columns: ['label', 'value']"></tr>
   </table>
 </div>
-
-

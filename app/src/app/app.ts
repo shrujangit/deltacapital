@@ -10,6 +10,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 
 
@@ -29,12 +31,14 @@ import { MatTableModule } from '@angular/material/table';
     MatDatepickerModule,
     MatNativeDateModule,
     MatSnackBarModule,
+    MatButtonModule,
+    MatIconModule,
     DragDropModule,
     MatTableModule
   ]
 })
 export class App {
-  formConfig = [
+  formConfig: any[] = [
     { type: 'text', label: 'Single-line Text', name: 'singleLine', multiline: false },
     { type: 'text', label: 'Multi-line Text', name: 'multiLine', multiline: true },
     { type: 'select', label: 'Dropdown', name: 'dropdown', options: ['Option 1', 'Option 2', 'Option 3'] },
@@ -45,19 +49,59 @@ export class App {
 
   form: FormGroup;
   submittedData: any = null;
+  fieldCounter = 0;
 
   constructor(private fb: FormBuilder, private http: HttpClient, private snackBar: MatSnackBar) {
-    this.form = this.fb.group({
-      singleLine: ['', Validators.required],
-      multiLine: ['', Validators.required],
-      dropdown: ['', Validators.required],
-      radioGroup: ['', Validators.required],
-      date: ['', Validators.required],
-      checkboxes: this.fb.array(
-        this.formConfig.find(f => f.name === 'checkboxes')?.options?.map(() => new FormControl<boolean>(false)) || [],
+    this.form = this.fb.group({});
+    this.initializeForm();
+  }
+
+  initializeForm(): void {
+    this.formConfig.forEach(field => this.addFieldToForm(field));
+  }
+
+  addFieldToForm(field: any): void {
+    if (field.type === 'checkbox') {
+      const array = this.fb.array(
+        field.options.map(() => new FormControl(false)),
         [this.requireAtLeastOneCheckboxChecked()]
-      )
-    });
+      );
+      this.form.addControl(field.name, array);
+    } else {
+      this.form.addControl(field.name, new FormControl('', Validators.required));
+    }
+  }
+
+  addField(): void {
+    const label = prompt('Enter field label:', 'New Field');
+    const type = prompt('Enter field type (text, select, checkbox, radio, date):', 'text');
+
+    if (!label || !type) return;
+
+    const newField: any = {
+      label,
+      type,
+      name: 'field' + (++this.fieldCounter)
+    };
+
+    if (type === 'checkbox' || type === 'radio' || type === 'select') {
+      const options = prompt('Enter comma-separated options:', 'Option 1, Option 2');
+      newField.options = options?.split(',').map((o: string) => o.trim()) || [];
+    } else if (type === 'text') {
+      const multiline = confirm('Should it be multi-line?');
+      newField.multiline = multiline;
+    }
+
+    this.formConfig.push(newField);
+    this.addFieldToForm(newField);
+  }
+
+  removeField(fieldName: string): void {
+    const index = this.formConfig.findIndex(f => f.name === fieldName);
+    if (index !== -1) {
+      this.formConfig.splice(index, 1);
+      this.form.removeControl(fieldName);
+    }
   }
 
   getCheckboxControl(name: string, index: number): FormControl {
