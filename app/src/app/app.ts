@@ -1,7 +1,11 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, FormControl, FormArray, Validators, ReactiveFormsModule, ValidatorFn, AbstractControl } from '@angular/forms';
+import {
+  FormBuilder, FormGroup, FormControl, FormArray, Validators, ReactiveFormsModule,
+  ValidatorFn, AbstractControl
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -9,11 +13,12 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
+import { MatTabsModule } from '@angular/material/tabs';
 
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-root',
@@ -31,13 +36,15 @@ import { MatTableModule } from '@angular/material/table';
     MatDatepickerModule,
     MatNativeDateModule,
     MatSnackBarModule,
+    MatTableModule,
     MatButtonModule,
     MatIconModule,
     DragDropModule,
-    MatTableModule
+    MatTabsModule
   ]
 })
 export class App {
+  form: FormGroup;
   formConfig: any[] = [
     { type: 'text', label: 'Single-line Text', name: 'singleLine', multiline: false },
     { type: 'text', label: 'Multi-line Text', name: 'multiLine', multiline: true },
@@ -46,15 +53,24 @@ export class App {
     { type: 'radio', label: 'Radio Group', name: 'radioGroup', options: ['X', 'Y', 'Z'] },
     { type: 'date', label: 'Date Picker', name: 'date' }
   ];
-
-  form: FormGroup;
-  submittedData: any = null;
   fieldCounter = 0;
+  submittedData: any = null;
+  activeTabIndex = -1;
 
-  constructor(private fb: FormBuilder, private http: HttpClient, private snackBar: MatSnackBar) {
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private snackBar: MatSnackBar
+  ) {
     this.form = this.fb.group({});
     this.initializeForm();
+
+
   }
+
+  onTabChange(event: any) {
+  this.activeTabIndex = event.index;
+}
 
   initializeForm(): void {
     this.formConfig.forEach(field => this.addFieldToForm(field));
@@ -75,7 +91,6 @@ export class App {
   addField(): void {
     const label = prompt('Enter field label:', 'New Field');
     const type = prompt('Enter field type (text, select, checkbox, radio, date):', 'text');
-
     if (!label || !type) return;
 
     const newField: any = {
@@ -129,21 +144,21 @@ export class App {
     const raw = this.form.getRawValue();
     const checkboxOptions = this.formConfig.find(f => f.name === 'checkboxes')?.options;
     const selectedCheckboxes = checkboxOptions?.filter((_, i) => raw.checkboxes[i]);
-
     const result = { ...raw, checkboxes: selectedCheckboxes };
+
     this.submittedData = result;
     console.log('Form Data:', result);
 
     this.http.post('https://jsonplaceholder.typicode.com/posts', result).subscribe({
-      next: res => this.snackBar.open('Form submitted successfully!', 'Close', { duration: 3000 }),
-      error: err => this.snackBar.open('Submission failed. Please try again.', 'Close', { duration: 3000 })
+      next: () => this.snackBar.open('Form submitted successfully!', 'Close', { duration: 3000 }),
+      error: () => this.snackBar.open('Submission failed. Please try again.', 'Close', { duration: 3000 })
     });
   }
 
   onReset(): void {
     this.form.reset();
     const checkboxArray = this.form.get('checkboxes') as FormArray;
-    checkboxArray.controls.forEach(control => control.setValue(false));
+    checkboxArray?.controls.forEach(control => control.setValue(false));
     this.submittedData = null;
     this.snackBar.open('Form reset.', 'Close', { duration: 2000 });
   }
