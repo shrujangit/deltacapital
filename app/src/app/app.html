@@ -1,0 +1,69 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div cdkDropList (cdkDropListDropped)="drop($event)">
+    <div *ngFor="let field of formConfig" cdkDrag class="field-wrapper">
+      
+      <label>{{ field.label }}</label>
+
+      <!-- Single-line text -->
+      <mat-form-field *ngIf="field.type === 'text' && !field.multiline" appearance="outline">
+        <input matInput [formControlName]="field.name" />
+        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
+          Required
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Multi-line text -->
+      <mat-form-field *ngIf="field.type === 'text' && field.multiline" appearance="outline">
+        <textarea matInput [formControlName]="field.name"></textarea>
+        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
+          Required
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Dropdown -->
+      <mat-form-field *ngIf="field.type === 'select'" appearance="outline">
+        <mat-select [formControlName]="field.name">
+          <mat-option *ngFor="let opt of field.options" [value]="opt">{{ opt }}</mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
+          Required
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Checkbox group -->
+      <div *ngIf="field.type === 'checkbox'">
+        <mat-checkbox *ngFor="let opt of field.options; let j = index"
+                      [formControl]="getCheckboxControl(field.name, j)">
+          {{ opt }}
+        </mat-checkbox>
+        <div *ngIf="isCheckboxInvalid(field.name)" class="error-text">
+          Please select at least one option
+        </div>
+      </div>
+
+      <!-- Radio buttons -->
+      <mat-radio-group *ngIf="field.type === 'radio'" [formControlName]="field.name">
+        <mat-radio-button *ngFor="let opt of field.options" [value]="opt">
+          {{ opt }}
+        </mat-radio-button>
+      </mat-radio-group>
+      <div *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched" class="error-text">
+        Please select one
+      </div>
+
+      <!-- Date picker -->
+      <mat-form-field *ngIf="field.type === 'date'" appearance="outline">
+        <input matInput [matDatepicker]="picker" [formControlName]="field.name" />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        <mat-error *ngIf="form.get(field.name)?.hasError('required') && form.get(field.name)?.touched">
+          Required
+        </mat-error>
+      </mat-form-field>
+
+      <br /><br />
+    </div>
+  </div>
+
+  <button mat-raised-button color="primary" type="submit">Submit</button>
+</form>
